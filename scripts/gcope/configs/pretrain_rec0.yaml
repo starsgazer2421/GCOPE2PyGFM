@@ -1,0 +1,37 @@
+baseline: gcope
+stage: pretrain
+
+general:
+  save_dir: storage/gcope/cora_gcope_rec0
+  cache_dir: storage/.cache
+  seed: 777
+  reconstruct: 0.0
+
+model:
+  backbone:
+    model_type: fagcn
+    hid_dim: 100
+    fagcn:
+      num_conv_layers: 2
+      dropout: 0.2
+      epsilon: 0.1
+  saliency:
+    model_type: none
+
+data:
+  name: [wisconsin, texas, cornell, chameleon, squirrel, citeseer, pubmed, computers, photo]
+  seed: 777
+  node_feature_dim: 100
+
+pretrain:
+  method: graphcl
+  learning_rate: 0.0001
+  weight_decay: 0.00001
+  epoch: 100
+  batch_size: 10
+  cross_link: 1
+  cross_link_ablation: false
+  dynamic_edge: none
+  dynamic_prune: 0.1
+  cl_init_method: learnable
+  split_method: RandomWalk
