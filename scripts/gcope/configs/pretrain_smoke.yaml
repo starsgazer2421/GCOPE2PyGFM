@@ -1,0 +1,36 @@
+baseline: gcope
+stage: pretrain
+
+general:
+  save_dir: storage/gcope/pretrain_smoke
+  cache_dir: storage/.cache
+  seed: 777
+  reconstruct: 0.0
+
+model:
+  backbone:
+    model_type: gcn
+    hid_dim: 64
+    gcn:
+      num_conv_layers: 2
+      dropout: 0.2
+  saliency:
+    model_type: none
+
+data:
+  name: [cora, citeseer]
+  seed: 777
+  node_feature_dim: 32
+
+pretrain:
+  method: graphcl
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  epoch: 1
+  batch_size: 4
+  cross_link: 1
+  cross_link_ablation: false
+  dynamic_edge: none
+  dynamic_prune: 0.1
+  cl_init_method: learnable
+  split_method: RandomWalk

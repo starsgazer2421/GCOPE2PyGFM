@@ -1,0 +1,50 @@
+baseline: gcope
+stage: prog
+
+general:
+  save_dir: storage/gcope/prog_smoke
+  cache_dir: storage/.cache
+  seed: 777
+  few_shot: 1
+  reconstruct: 0.0
+
+model:
+  backbone:
+    model_type: gcn
+    hid_dim: 64
+    gcn:
+      num_conv_layers: 2
+      dropout: 0.2
+  saliency:
+    model_type: none
+  answering:
+    model_type: mlp
+
+data:
+  name: cora
+  seed: 777
+  node_feature_dim: 32
+  supervised:
+    ratios: [0.1, 0.1, 0.8]
+
+adapt:
+  method: prog
+  pretrained_file: storage/gcope/pretrain_smoke/cora,citeseer_pretrained_model.pt
+  epoch: 1
+  batch_size: 8
+  repeat_times: 1
+  prog:
+    prompt_lr: 0.0001
+    prompt_weight_decay: 0.00001
+    prompt_epoch: 1
+    ans_lr: 0.001
+    ans_weight_decay: 0.00001
+    ans_epoch: 1
+    backbone_tuning: false
+    saliency_tuning: false
+    cross_prune: 0.3
+    inner_prune: 0.1
+    edge_attr_dim: 0
+    prompting_target_batch_size: 128
+    prompting_source_batch_size: 2048
+    cross_link: true

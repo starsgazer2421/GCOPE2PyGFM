@@ -1,0 +1,40 @@
+baseline: gcope
+stage: finetune
+
+general:
+  save_dir: storage/gcope/finetune_smoke
+  cache_dir: storage/.cache
+  seed: 777
+  few_shot: 1
+  reconstruct: 0.0
+
+model:
+  backbone:
+    model_type: gcn
+    hid_dim: 64
+    gcn:
+      num_conv_layers: 2
+      dropout: 0.2
+  saliency:
+    model_type: none
+  answering:
+    model_type: mlp
+
+data:
+  name: cora
+  seed: 777
+  node_feature_dim: 32
+  supervised:
+    ratios: [0.1, 0.1, 0.8]
+
+adapt:
+  method: finetune
+  pretrained_file: storage/gcope/pretrain_smoke/cora,citeseer_pretrained_model.pt
+  epoch: 1
+  batch_size: 8
+  repeat_times: 1
+  finetune:
+    backbone_tuning: true
+    saliency_tuning: false
+    learning_rate: 0.001
+    weight_decay: 0.00001
