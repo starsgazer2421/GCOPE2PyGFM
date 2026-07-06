@@ -1,5 +1,0 @@
-{
-  "type": "GraphTextOfflineTokenizer",
-  "model_max_length": 2048,
-  "vocab_size": 282
-}
