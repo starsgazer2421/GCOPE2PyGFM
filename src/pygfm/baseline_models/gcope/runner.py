@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import json
 import os
 import sys
 from pathlib import Path
@@ -102,6 +103,10 @@ def _config_to_argv(cfg: dict[str, Any]) -> list[str]:
     return argv
 
 
+def _gcope_config_payload(cfg: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in cfg.items() if key not in _SKIP_KEYS}
+
+
 def run_from_config(cfg: dict[str, Any], default_stage: str | None = None) -> None:
     cfg = _normalise_config(cfg, default_stage=default_stage)
     original_src = Path(__file__).resolve().parent / "original_src"
@@ -115,7 +120,7 @@ def run_from_config(cfg: dict[str, Any], default_stage: str | None = None) -> No
 
     old_argv = sys.argv[:]
     try:
-        sys.argv = [str(exec_path)] + _config_to_argv(cfg)
+        sys.argv = [str(exec_path)]
         module_name = "_pygfm_gcope_original_exec"
         spec = importlib.util.spec_from_file_location(module_name, exec_path)
         if spec is None or spec.loader is None:
@@ -124,12 +129,15 @@ def run_from_config(cfg: dict[str, Any], default_stage: str | None = None) -> No
         spec.loader.exec_module(module)
         if not hasattr(module, "config"):
             module.config = module.get_current_config()
-        if not hasattr(module, "parser"):
-            module.parser = module.argparse.ArgumentParser("All in One: Union of Homophily and Heterophily Graphs")
-            module.config.augment_argparse(module.parser)
-        module.config.collect_argparse_args(module.parser)
+        gcope_cfg = _gcope_config_payload(cfg)
+        module.config.collect(gcope_cfg)
         module.config.validate()
-        module.config.get_all_config(dump_path=os.path.join(module.config["general.save_dir"], "config.json"))
+        config_dump_path = os.path.join(module.config["general.save_dir"], "config.json")
+        if hasattr(module.config, "get_all_config"):
+            module.config.get_all_config(dump_path=config_dump_path)
+        else:
+            with open(config_dump_path, "w", encoding="utf-8") as f:
+                json.dump(gcope_cfg, f, indent=2)
         module.run()
     finally:
         sys.argv = old_argv
