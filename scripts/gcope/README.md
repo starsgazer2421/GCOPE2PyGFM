@@ -9,10 +9,14 @@
 进入 `GCOPE2PyGFM` 项目根目录后安装依赖：
 
 ```bash
-pip install -e ".[torch,gcope]"
+pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
+  -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
+pip install torch-geometric
+pip install -e ".[gcope]" --no-deps
+pip install fastargs torchmetrics tqdm pandas terminaltables networkx sympy
 ```
 
-其中 `torch` 包含 PyTorch / PyG 相关依赖，`gcope` 包含 GCOPE 原始代码所需的 `fastargs`、`torchmetrics`、`dgl`、`networkx`、`sympy` 等依赖。
+其中第一行安装 PyG 对应 PyTorch/CUDA 版本的预编译扩展包，避免在服务器上长时间源码编译；`gcope` 包含 GCOPE 原始代码所需的 `fastargs`、`torchmetrics`、`networkx`、`sympy` 等依赖。
 
 ## 实验流程
 
