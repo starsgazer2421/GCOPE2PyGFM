@@ -12,11 +12,11 @@
 pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
   -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
 pip install torch-geometric
-pip install -e ".[gcope]" --no-deps
-pip install fastargs torchmetrics tqdm pandas terminaltables networkx sympy
+pip install -e . --no-deps
+pip install fastargs torchmetrics dgl tqdm pandas terminaltables networkx sympy
 ```
 
-其中第一行安装 PyG 对应 PyTorch/CUDA 版本的预编译扩展包，避免在服务器上长时间源码编译；`gcope` 包含 GCOPE 原始代码所需的 `fastargs`、`torchmetrics`、`networkx`、`sympy` 等依赖。
+其中第一行安装 PyG 对应 PyTorch/CUDA 版本的预编译扩展包，避免在服务器上长时间源码编译；`pip install -e . --no-deps` 只安装本地 PyGFM 包本身，GCOPE 原始代码所需的 `fastargs`、`torchmetrics`、`dgl`、`networkx`、`sympy` 等依赖在最后一行手动安装。
 
 ## 实验流程
 
@@ -114,6 +114,36 @@ target dataset: Cora
 training mode: end-to-end supervised baseline
 repeat_times: 5
 ```
+
+## 消融实验
+
+本目录只保留 `pretrain.yaml`、`finetune.yaml`、`prog.yaml` 和 `ete.yaml` 四个主要配置文件。RQ2、RQ3 的消融实验不再单独保留额外 YAML，可以在主配置上临时修改关键参数后运行。
+
+RQ2 关闭 coordinator 间连接边：
+
+```text
+pretrain.yaml:
+  general.save_dir: storage/gcope/cora_gcope_no_inter_edges
+  pretrain.cross_link_ablation: true
+
+finetune.yaml:
+  general.save_dir: storage/gcope/cora_gcope_no_inter_edges
+  adapt.pretrained_file: storage/gcope/cora_gcope_no_inter_edges/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+```
+
+RQ3 不使用 reconstruction loss：
+
+```text
+pretrain.yaml:
+  general.save_dir: storage/gcope/cora_gcope_rec0
+  pretrain.reconstruct: 0.0
+
+finetune.yaml:
+  general.save_dir: storage/gcope/cora_gcope_rec0
+  adapt.pretrained_file: storage/gcope/cora_gcope_rec0/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+```
+
+消融实验结束后，建议把 `pretrain.yaml` 和 `finetune.yaml` 改回默认配置，避免后续 RQ1/RQ4 复现实验混用消融参数。
 
 ## PyGFM 统一入口
 
