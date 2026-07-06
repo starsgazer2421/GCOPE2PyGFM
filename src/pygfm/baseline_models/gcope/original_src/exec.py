@@ -1,7 +1,20 @@
 from importlib import import_module
 from fastargs import get_current_config, Param, Section
 from fastargs.decorators import param
-from fastargs.validation import OneOf, File, ListOfFloats, Folder, SubsetOf, BoolAsInt
+from fastargs.validation import OneOf, ListOfFloats, Folder, SubsetOf, BoolAsInt
+try:
+    from fastargs.validation import File
+except ImportError:
+    from fastargs.validation import Checker
+
+    class File(Checker):
+        """Compatibility checker for fastargs versions without File()."""
+
+        def check(self, value):
+            return str(value)
+
+        def help(self):
+            return "a file path"
 import argparse
 import os
 
