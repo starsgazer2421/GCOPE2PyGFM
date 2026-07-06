@@ -1,6 +1,8 @@
-# GCOPE 实验手册（PyGFM 集成版，Cora 1-shot）
+# GCOPE 实验手册（PyGFM 集成版）
 
 本目录提供 GCOPE 在 PyGFM 中的实验入口。GCOPE 原始源码被迁入 `src/pygfm/baseline_models/gcope/original_src/` ，并通过适配层 `src/pygfm/baseline_models/gcope/runner.py` 将 PyGFM 风格 YAML 配置转换为GCOPE 原始 `fastargs` 参数。
+
+当前配置默认复现论文中的 Cora 1-shot 迁移实验：预训练时将 Cora 作为目标数据集留出，使用其余 9 个数据集作为 source datasets；微调时再把预训练模型迁移到 Cora。
 
 ## 安装
 
@@ -17,7 +19,7 @@ pip install -e ".[torch,gcope]"
 ### Step 1  跨域预训练
 
 ```bash
-python scripts/gcope/pretrain.py -c scripts/gcope/configs/pretrain_cora.yaml
+python scripts/gcope/pretrain.py -c scripts/gcope/configs/pretrain.yaml
 ```
 
 预期产物：
@@ -42,7 +44,7 @@ backbone: FAGCN
 ### Step 2  微调迁移
 
 ```bash
-python scripts/gcope/finetune.py -c scripts/gcope/configs/finetune_cora.yaml
+python scripts/gcope/finetune.py -c scripts/gcope/configs/finetune.yaml
 ```
 
 预期产物：
@@ -66,7 +68,7 @@ backbone_tuning: true
 ### Step 3  ProG 提示迁移
 
 ```bash
-python scripts/gcope/prog.py -c scripts/gcope/configs/prog_cora.yaml
+python scripts/gcope/prog.py -c scripts/gcope/configs/prog.yaml
 ```
 
 预期产物：
@@ -89,7 +91,7 @@ repeat_times: 5
 ### Step 4  端到端监督训练
 
 ```bash
-python scripts/gcope/ete.py -c scripts/gcope/configs/ete_cora.yaml
+python scripts/gcope/ete.py -c scripts/gcope/configs/ete.yaml
 ```
 
 预期产物：
@@ -114,8 +116,25 @@ repeat_times: 5
 除直接运行 `scripts/gcope/*.py` 外，也可以通过 PyGFM 统一 CLI 调用：
 
 ```bash
-pygfm -c scripts/gcope/configs/pretrain_cora.yaml
-pygfm -c scripts/gcope/configs/finetune_cora.yaml
-pygfm -c scripts/gcope/configs/prog_cora.yaml
-pygfm -c scripts/gcope/configs/ete_cora.yaml
+pygfm -c scripts/gcope/configs/pretrain.yaml
+pygfm -c scripts/gcope/configs/finetune.yaml
+pygfm -c scripts/gcope/configs/prog.yaml
+pygfm -c scripts/gcope/configs/ete.yaml
 ```
+
+## 更换目标数据集
+
+如果要从 Cora 改成其他目标数据集，需要同步修改以下位置：
+
+```text
+pretrain.yaml:
+  data.name: 删除目标数据集，只保留 source datasets
+  general.save_dir: 建议改成对应目标数据集的输出目录
+
+finetune.yaml / prog.yaml / ete.yaml:
+  data.name: 改成新的目标数据集
+  general.save_dir: 改成对应目标数据集的输出目录
+  adapt.pretrained_file: 改成 pretrain 阶段实际生成的 checkpoint 路径
+```
+
+例如目标数据集改为 Photo 时，预训练 `data.name` 应该包含除 Photo 以外的 9 个数据集，微调 `data.name` 改为 `photo`，并把 `pretrained_file` 指向新的预训练模型文件。
