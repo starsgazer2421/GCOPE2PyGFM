@@ -1,197 +1,99 @@
-<div align="center">
-<img src="./assets/LOGO.png" style="width:30%; display:block; margin:0 auto;" alt="LOGO">
+# GCOPE 实验手册（PyGFM 集成版）
 
----
+本目录提供 GCOPE 在 PyGFM 中的实验入口。GCOPE 原始源码被迁入 `src/pygfm/baseline_models/gcope/original_src/` ，并通过适配层 `src/pygfm/baseline_models/gcope/runner.py` 将 PyGFM 风格 YAML 配置转换为GCOPE 原始 `fastargs` 参数。
 
-`pygfm` is a unified Python toolkit for **Graph Foundation Model (GFM)** research. It integrates **19 state-of-the-art baseline methods** under a single, pip-installable package with shared utilities, standardized interfaces, and fully reproducible experiment pipelines.
+当前配置默认复现论文中的 Cora 1-shot 迁移实验：预训练时将 Cora 作为目标数据集留出，使用其余 9 个数据集作为 source datasets；微调时再把预训练模型迁移到 Cora。
 
-Developed by **Beihang University · School of Computer Science and Engineering · ACT Lab · MAGIC GROUP**.
+## 安装
 
-## Framework Overview
-
-<div align="center">
-  <img src="assets/framework.png" alt="PyGFM Framework Overview" width="90%">
-</div>
-
-PyGFM is organized into four stacked layers — **Graph Data Abstraction → Alignment & Fusion Bridge → Representation Backbones → Task Heads & Orchestration** — with a unified CLI, model recipes, and an auto-experiment tracker sitting on top.
-
-## Highlights
-
-- **One package, 19 baselines** — prompt-based GFMs, structure-aware models, LLM-integrated approaches, and retrieval-augmented methods all available via a single `pip install`.
-- **Reproducible pipelines** — every baseline ships with YAML-driven experiment configs, training scripts, and evaluation helpers.
-- **Shared backbone library** — common GNN encoders, loss functions, and data utilities are factored out and reused across all baselines, reducing code duplication.
-- **CLI-first design** — launch pre-training, fine-tuning, and evaluation jobs directly from the command line without writing any boilerplate.
-- **LLM-ready** — first-class support for LLM-integrated GFMs (GraphGPT, GraphText, LLaGA, OneForAll) with HuggingFace-compatible YAML configs.
-
-## Installation
-
-### Minimal install (utilities only)
+进入 `GCOPE2PyGFM` 项目根目录后安装依赖：
 
 ```bash
-pip install python-gfm
+pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
+  -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
+pip install torch-geometric
+pip install -e . --no-deps
+pip install fastargs torchmetrics dgl tqdm pandas terminaltables networkx sympy
 ```
 
-### With PyTorch + PyG (recommended for running experiments)
+其中第一行安装 PyG 对应 PyTorch/CUDA 版本的预编译扩展包，避免在服务器上长时间源码编译；`pip install -e . --no-deps` 只安装本地 PyGFM 包本身，GCOPE 原始代码所需的 `fastargs`、`torchmetrics`、`dgl`、`networkx`、`sympy` 等依赖在最后一行手动安装。
+
+## 实验流程
+
+### Step 1  跨域预训练
 
 ```bash
-# 1. Install PyTorch with CUDA 12.8 support
-pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu128
-
-# 2. Install pygfm with the full ML stack (PyG extensions are resolved automatically)
-pip install "python-gfm[torch]" -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
+python scripts/gcope/pretrain.py -c scripts/gcope/configs/pretrain.yaml
 ```
 
-> **CPU-only machines:** replace the CUDA index URLs with `https://download.pytorch.org/whl/cpu` and `https://data.pyg.org/whl/torch-2.8.0+cpu.html` respectively.
-
-### Development install (full checkout with experiment scripts)
+### Step 2  微调迁移
 
 ```bash
-git clone <repo-url> && cd pygfm
-pip install -e ".[torch,dev]"
+python scripts/gcope/finetune.py -c scripts/gcope/configs/finetune.yaml
 ```
 
-The `dev` extra adds `pytest` and `ruff` for testing and linting.
-
-## Quick Start
-
-```python
-import pygfm
-
-print(pygfm.__version__)
-```
-
-Run a pre-training job from the CLI:
+### Step 3  ProG 提示迁移
 
 ```bash
-# SA2GFM contrastive pre-training
-gfm-sa2gfm-pretrain -c scripts/sa2gfm/configs/pretrain.yaml
-
-# SA2GFM downstream fine-tuning
-gfm-sa2gfm-downstream -c scripts/sa2gfm/configs/downstream.yaml
+python scripts/gcope/prog.py -c scripts/gcope/configs/prog.yaml
 ```
 
-## Package Structure
-
-```
-pygfm/
-├── src/pygfm/
-│   ├── baseline_models/   # 19 GFM baseline implementations
-│   ├── public/            # Shared utilities, losses, and backbone encoders
-│   │   ├── backbone_models/
-│   │   ├── utils/
-│   │   └── cli/
-│   ├── private/           # Core encoders and internal data generation
-│   └── cli/               # Console entry points
-└── scripts/               # Per-baseline experiment scripts and configs
-    ├── <baseline>/
-    │   ├── README.md
-    │   ├── configs/
-    │   ├── pretrain.py / downstream.py / ...
-    │   └── eval_script/
-```
-
-## Supported Baselines
-
-| Category                          | Methods                                                         |
-| --------------------------------- | --------------------------------------------------------------- |
-| **Prompt-based GFM**        | MDGPT, SAMGPT, MDGFM, GraphPrompt, HGPrompt, MultiGPrompt, GCoT |
-| **Structure-aware GFM**     | SA2GFM, Bridge, GraphKeeper, GraphMore, Graver, BIM-GFM, GCOPE  |
-| **LLM-integrated GFM**      | GraphGPT, GraphText, LLaGA, OneForAll                           |
-| **Retrieval-augmented GFM** | RAG-GFM                                                         |
-| **Classic Baseline**        | Classic GNN                                                     |
-
-## Running Experiments
-
-All scripts are under `scripts/<baseline>/` and should be run from the repository root.
+### Step 4  端到端监督训练
 
 ```bash
-# Prompt-based: MDGPT pre-training
-python scripts/mdgpt/pretrain.py
-
-# Structure-aware: SA2GFM downstream fine-tuning
-python scripts/sa2gfm/downstream.py
-
-# LLM-integrated: GCoT full pipeline
-python scripts/gcot/pretrain.py
-python scripts/gcot/finetune.py
-python scripts/gcot/finetune_graph.py
-
-# LLM-integrated: GraphGPT (YAML-driven HuggingFace-style training)
-python scripts/graphgpt/run_with_config.py -c scripts/graphgpt/configs/train_mem_template.yaml
+python scripts/gcope/ete.py -c scripts/gcope/configs/ete.yaml
 ```
 
-## Console Commands
+## 消融实验
 
-After installation the following CLI entry points are registered:
+本目录只保留 `pretrain.yaml`、`finetune.yaml`、`prog.yaml` 和 `ete.yaml` 四个主要配置文件。RQ2、RQ3 的消融实验不再单独保留额外 YAML，可以在主配置上临时修改关键参数后运行。
 
-| Command                   | Description                                       |
-| ------------------------- | ------------------------------------------------- |
-| `pygfm` / `gfm`       | Generic YAML-driven runner (`-c <config.yaml>`) |
-| `gfm-sa2gfm-pretrain`   | SA2GFM contrastive pre-training                   |
-| `gfm-sa2gfm-downstream` | SA2GFM MoE downstream fine-tuning                 |
+RQ2 关闭 coordinator 间连接边：
 
-## Configuration
+```text
+pretrain.yaml:
+  general.save_dir: storage/gcope/cora_gcope_no_inter_edges
+  pretrain.cross_link_ablation: true
 
-All experiment hyperparameters are stored as YAML files under `scripts/<baseline>/configs/`. Pass configs via the `-c` flag:
+finetune.yaml:
+  general.save_dir: storage/gcope/cora_gcope_no_inter_edges
+  adapt.pretrained_file: storage/gcope/cora_gcope_no_inter_edges/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+```
+
+RQ3 不使用 reconstruction loss：
+
+```text
+pretrain.yaml:
+  general.save_dir: storage/gcope/cora_gcope_rec0
+  pretrain.reconstruct: 0.0
+
+finetune.yaml:
+  general.save_dir: storage/gcope/cora_gcope_rec0
+  adapt.pretrained_file: storage/gcope/cora_gcope_rec0/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+```
+
+## PyGFM 统一入口
+
+除直接运行 `scripts/gcope/*.py` 外，也可以通过 PyGFM 统一 CLI 调用：
 
 ```bash
-python scripts/<baseline>/pretrain.py -c scripts/<baseline>/configs/default.yaml
+pygfm -c scripts/gcope/configs/pretrain.yaml
+pygfm -c scripts/gcope/configs/finetune.yaml
+pygfm -c scripts/gcope/configs/prog.yaml
+pygfm -c scripts/gcope/configs/ete.yaml
 ```
 
-**API keys:** baselines that call external LLM APIs (e.g., GraphText) read credentials from a local env file. **Never commit API keys to the repository.** Copy the example template and fill in your keys:
+## 更换目标数据集
 
-```bash
-cp scripts/graphtext/config/user/env.yaml.example scripts/graphtext/config/user/env.yaml
-# Then edit env.yaml and add your API key
+如果要从 Cora 改成其他目标数据集，需要同步修改以下位置：
+
+```text
+pretrain.yaml:
+  data.name: 删除目标数据集，只保留 source datasets
+  general.save_dir: 建议改成对应目标数据集的输出目录
+
+finetune.yaml / prog.yaml / ete.yaml:
+  data.name: 改成新的目标数据集
+  general.save_dir: 改成对应目标数据集的输出目录
+  adapt.pretrained_file: 改成 pretrain 阶段实际生成的 checkpoint 路径
 ```
-
-## Baseline Documentation
-
-Each baseline ships a dedicated README with setup instructions, data preparation steps, and evaluation notes:
-
-| Baseline     | Docs                                                            |
-| ------------ | --------------------------------------------------------------- |
-| MDGPT        | [scripts/mdgpt/README.md](scripts/mdgpt/README.md)               |
-| SA2GFM       | [scripts/sa2gfm/README.md](scripts/sa2gfm/README.md)             |
-| SAMGPT       | [scripts/samgpt/README.md](scripts/samgpt/README.md)             |
-| MDGFM        | [scripts/mdgfm/README.md](scripts/mdgfm/README.md)               |
-| GraphPrompt  | [scripts/graphprompt/README.md](scripts/graphprompt/README.md)   |
-| HGPrompt     | [scripts/hgprompt/README.md](scripts/hgprompt/README.md)         |
-| MultiGPrompt | [scripts/multigprompt/README.md](scripts/multigprompt/README.md) |
-| GCoT         | [scripts/gcot/README.md](scripts/gcot/README.md)                 |
-| Graver       | [scripts/graver/README.md](scripts/graver/README.md)             |
-| GraphMore    | [scripts/graphmore/README.md](scripts/graphmore/README.md)       |
-| Bridge       | [scripts/bridge/README.md](scripts/bridge/README.md)             |
-| GraphKeeper  | [scripts/graphkeeper/README.md](scripts/graphkeeper/README.md)   |
-| GraphGPT     | [scripts/graphgpt/README.md](scripts/graphgpt/README.md)         |
-| GraphText    | [scripts/graphtext/README.md](scripts/graphtext/README.md)       |
-| LLaGA        | [scripts/llaga/README.md](scripts/llaga/README.md)               |
-| OneForAll    | [scripts/oneforall/README.md](scripts/oneforall/README.md)       |
-| RAG-GFM      | [scripts/rag_gfm/README.md](scripts/rag_gfm/README.md)           |
-| GCOPE        | [scripts/gcope/README.md](scripts/gcope/README.md)               |
-
-## Requirements
-
-| Dependency        | Version                       |
-| ----------------- | ----------------------------- |
-| Python            | ≥ 3.12                       |
-| PyTorch           | 2.8.0 (CUDA 12.8 recommended) |
-| PyTorch Geometric | ≥ 2.3.0                      |
-| Transformers      | ≥ 4.36.0                     |
-| Accelerate        | ≥ 0.26.0                     |
-
-See [`pyproject.toml`](pyproject.toml) for the full dependency specification.
-
-## License
-
-This project is licensed under the **[Apache License 2.0](LICENSE)**.
-
-## Team
-
-**MAGIC GROUP** — Beihang University, School of Computer Science and Engineering, ACT Lab.
-
----
-
-<div align="center">
-<sub>If you find this toolkit useful in your research, please consider starring the repository ⭐</sub>
-</div>
