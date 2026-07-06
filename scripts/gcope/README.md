@@ -2,7 +2,7 @@
 
 本目录提供 GCOPE 在 PyGFM 中的实验入口。GCOPE 原始源码被迁入 `src/pygfm/baseline_models/gcope/original_src/` ，并通过适配层 `src/pygfm/baseline_models/gcope/runner.py` 将 PyGFM 风格 YAML 配置转换为GCOPE 原始 `fastargs` 参数。
 
-当前配置默认运行 Cora 1-shot 迁移实验：预训练时将 Cora 作为目标数据集留出。由于 `graphmining.ai` 在部分实验环境中无法访问，默认配置移除了 Chameleon，使用其余 8 个数据集作为 source datasets；微调时再把预训练模型迁移到 Cora。
+当前配置默认复现论文中的 Cora 1-shot 迁移实验：预训练时将 Cora 作为目标数据集留出，使用其余 9 个数据集作为 source datasets；微调时再把预训练模型迁移到 Cora。
 
 ## 安装
 
@@ -25,7 +25,7 @@ python scripts/gcope/pretrain.py -c scripts/gcope/configs/pretrain.yaml
 预期产物：
 
 ```text
-storage/gcope/cora_gcope/wisconsin,texas,cornell,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+storage/gcope/cora_gcope/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
 storage/gcope/cora_gcope/config.json
 ```
 
@@ -35,7 +35,7 @@ storage/gcope/cora_gcope/config.json
 stage: pretrain
 method: GraphCL
 target dataset left out: Cora
-source datasets: Wisconsin, Texas, Cornell, Squirrel, Citeseer, Pubmed, Computers, Photo
+source datasets: Wisconsin, Texas, Cornell, Chameleon, Squirrel, Citeseer, Pubmed, Computers, Photo
 cross_link: 1
 reconstruct weight: 0.2
 backbone: FAGCN
@@ -61,7 +61,7 @@ stage: finetune
 target dataset: Cora
 few_shot: 1
 repeat_times: 5
-pretrained_file: storage/gcope/cora_gcope/wisconsin,texas,cornell,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+pretrained_file: storage/gcope/cora_gcope/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
 backbone_tuning: true
 ```
 
@@ -137,4 +137,4 @@ finetune.yaml / prog.yaml / ete.yaml:
   adapt.pretrained_file: 改成 pretrain 阶段实际生成的 checkpoint 路径
 ```
 
-例如目标数据集改为 Photo 时，预训练 `data.name` 应该包含除 Photo 以外、且当前环境可下载的源数据集，微调 `data.name` 改为 `photo`，并把 `pretrained_file` 指向新的预训练模型文件。
+例如目标数据集改为 Photo 时，预训练 `data.name` 应该包含除 Photo 以外的 9 个数据集，微调 `data.name` 改为 `photo`，并把 `pretrained_file` 指向新的预训练模型文件。
