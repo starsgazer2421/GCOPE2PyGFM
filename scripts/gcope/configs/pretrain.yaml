@@ -19,7 +19,7 @@ model:
     model_type: none
 
 data:
-  name: [wisconsin, texas, cornell, citeseer, pubmed, computers, photo]
+  name: [wisconsin, texas, cornell, chameleon, squirrel, citeseer, pubmed, computers, photo]
   seed: 777
   node_feature_dim: 100
 
