@@ -49,7 +49,8 @@ def run(
         } if saliency_model != 'none' else None,
     )
 
-    model.load_state_dict(torch.load(pretrained_file,map_location=lambda storage, loc: storage.cuda(1)), strict=False)
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    model.load_state_dict(torch.load(pretrained_file, map_location=device), strict=False)
 
     # train
     all_results = []

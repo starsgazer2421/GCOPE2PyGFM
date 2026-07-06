@@ -2,7 +2,7 @@ baseline: gcope
 stage: prog
 
 general:
-  save_dir: storage/gcope/prog_smoke
+  save_dir: storage/gcope/cora_prog
   cache_dir: storage/.cache
   seed: 777
   few_shot: 1
@@ -10,11 +10,12 @@ general:
 
 model:
   backbone:
-    model_type: gcn
-    hid_dim: 64
-    gcn:
+    model_type: fagcn
+    hid_dim: 100
+    fagcn:
       num_conv_layers: 2
       dropout: 0.2
+      epsilon: 0.1
   saliency:
     model_type: none
   answering:
@@ -23,21 +24,21 @@ model:
 data:
   name: cora
   seed: 777
-  node_feature_dim: 32
+  node_feature_dim: 100
   supervised:
     ratios: [0.1, 0.1, 0.8]
 
 adapt:
   method: prog
-  pretrained_file: storage/gcope/pretrain_smoke/cora,citeseer_pretrained_model.pt
-  epoch: 1
-  batch_size: 8
-  repeat_times: 1
+  pretrained_file: storage/gcope/cora_gcope/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+  epoch: 100
+  batch_size: 100
+  repeat_times: 5
   prog:
     prompt_lr: 0.0001
     prompt_weight_decay: 0.00001
     prompt_epoch: 1
-    ans_lr: 0.001
+    ans_lr: 0.0001
     ans_weight_decay: 0.00001
     ans_epoch: 1
     backbone_tuning: false

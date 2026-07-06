@@ -2,7 +2,7 @@ baseline: gcope
 stage: ete
 
 general:
-  save_dir: storage/gcope/ete_smoke
+  save_dir: storage/gcope/cora_ete
   cache_dir: storage/.cache
   seed: 777
   few_shot: 1
@@ -10,11 +10,12 @@ general:
 
 model:
   backbone:
-    model_type: gcn
-    hid_dim: 64
-    gcn:
+    model_type: fagcn
+    hid_dim: 100
+    fagcn:
       num_conv_layers: 2
       dropout: 0.2
+      epsilon: 0.1
   saliency:
     model_type: none
   answering:
@@ -23,13 +24,13 @@ model:
 data:
   name: cora
   seed: 777
-  node_feature_dim: 32
+  node_feature_dim: 100
   supervised:
     ratios: [0.1, 0.1, 0.8]
 
 ete:
-  epoch: 1
-  batch_size: 8
-  learning_rate: 0.001
+  epoch: 100
+  batch_size: 100
+  learning_rate: 0.0001
   weight_decay: 0.00001
-  repeat_times: 1
+  repeat_times: 5
