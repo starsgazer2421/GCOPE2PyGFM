@@ -63,7 +63,7 @@ def get_supervised_data(dataset, ratios, seed, cache_dir,few_shot):
         # pdb.set_trace()
 
         if os.path.exists(cache_path):
-            return torch.load(cache_path)
+            return torch.load(cache_path, weights_only=False)
 
         from .utils import preprocess, iterate_datasets
 
@@ -79,7 +79,7 @@ def get_supervised_data(dataset, ratios, seed, cache_dir,few_shot):
         cache_path = os.path.join(cache_dir + f'/{few_shot}_shot' + f'_s{seed}' + '.pt')
 
         if os.path.exists(cache_path):
-            return torch.load(cache_path)
+            return torch.load(cache_path, weights_only=False)
 
         from .utils import preprocess, iterate_datasets
 
