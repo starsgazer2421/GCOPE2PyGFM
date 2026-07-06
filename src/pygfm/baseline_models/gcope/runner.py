@@ -122,6 +122,11 @@ def run_from_config(cfg: dict[str, Any], default_stage: str | None = None) -> No
             raise ImportError(f"Cannot import GCOPE exec.py from {exec_path}")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+        if not hasattr(module, "config"):
+            module.config = module.get_current_config()
+        if not hasattr(module, "parser"):
+            module.parser = module.argparse.ArgumentParser("All in One: Union of Homophily and Heterophily Graphs")
+            module.config.augment_argparse(module.parser)
         module.config.collect_argparse_args(module.parser)
         module.config.validate()
         module.config.get_all_config(dump_path=os.path.join(module.config["general.save_dir"], "config.json"))
