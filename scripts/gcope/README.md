@@ -26,47 +26,10 @@ pip install fastargs torchmetrics dgl tqdm pandas terminaltables networkx sympy
 python scripts/gcope/pretrain.py -c scripts/gcope/configs/pretrain.yaml
 ```
 
-预期产物：
-
-```text
-storage/gcope/cora_gcope/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
-storage/gcope/cora_gcope/config.json
-```
-
-配置含义：
-
-```text
-stage: pretrain
-method: GraphCL
-target dataset left out: Cora
-source datasets: Wisconsin, Texas, Cornell, Chameleon, Squirrel, Citeseer, Pubmed, Computers, Photo
-cross_link: 1
-reconstruct weight: 0.2
-backbone: FAGCN
-```
-
 ### Step 2  微调迁移
 
 ```bash
 python scripts/gcope/finetune.py -c scripts/gcope/configs/finetune.yaml
-```
-
-预期产物：
-
-```text
-storage/gcope/cora_gcope/cora_results.txt
-storage/gcope/cora_gcope/config.json
-```
-
-配置含义：
-
-```text
-stage: finetune
-target dataset: Cora
-few_shot: 1
-repeat_times: 5
-pretrained_file: storage/gcope/cora_gcope/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
-backbone_tuning: true
 ```
 
 ### Step 3  ProG 提示迁移
@@ -75,44 +38,10 @@ backbone_tuning: true
 python scripts/gcope/prog.py -c scripts/gcope/configs/prog.yaml
 ```
 
-预期产物：
-
-```text
-storage/gcope/cora_prog/cora_results.txt
-storage/gcope/cora_prog/config.json
-```
-
-配置含义：
-
-```text
-stage: prog
-target dataset: Cora
-prompt model: HeavyPrompt
-backbone_tuning: false
-repeat_times: 5
-```
-
 ### Step 4  端到端监督训练
 
 ```bash
 python scripts/gcope/ete.py -c scripts/gcope/configs/ete.yaml
-```
-
-预期产物：
-
-```text
-storage/gcope/cora_ete/cora_results.txt
-storage/gcope/cora_ete/results.pt
-storage/gcope/cora_ete/config.json
-```
-
-配置含义：
-
-```text
-stage: ete
-target dataset: Cora
-training mode: end-to-end supervised baseline
-repeat_times: 5
 ```
 
 ## 消融实验
@@ -143,8 +72,6 @@ finetune.yaml:
   adapt.pretrained_file: storage/gcope/cora_gcope_rec0/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
 ```
 
-消融实验结束后，建议把 `pretrain.yaml` 和 `finetune.yaml` 改回默认配置，避免后续 RQ1/RQ4 复现实验混用消融参数。
-
 ## PyGFM 统一入口
 
 除直接运行 `scripts/gcope/*.py` 外，也可以通过 PyGFM 统一 CLI 调用：
@@ -170,5 +97,3 @@ finetune.yaml / prog.yaml / ete.yaml:
   general.save_dir: 改成对应目标数据集的输出目录
   adapt.pretrained_file: 改成 pretrain 阶段实际生成的 checkpoint 路径
 ```
-
-例如目标数据集改为 Photo 时，预训练 `data.name` 应该包含除 Photo 以外的 9 个数据集，微调 `data.name` 改为 `photo`，并把 `pretrained_file` 指向新的预训练模型文件。
