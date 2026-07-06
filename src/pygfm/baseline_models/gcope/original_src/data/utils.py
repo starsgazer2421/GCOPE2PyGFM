@@ -26,6 +26,19 @@ def x_svd(data, out_dim):
     return reduction(data)
 
 
+def _load_wikipedia_network(cache_dir, data_name):
+    data = WikipediaNetwork(root=cache_dir, name=data_name.capitalize(), geom_gcn_preprocess=True)._data
+    try:
+        preProcDs = WikipediaNetwork(root=cache_dir, name=data_name.capitalize(), geom_gcn_preprocess=False)
+        data.edge_index = preProcDs[0].edge_index
+    except Exception as exc:
+        print(
+            f"Warning: failed to load {data_name}.npz from graphmining.ai; "
+            f"using Geom-GCN GitHub edge_index instead. Reason: {exc}"
+        )
+    return data
+
+
 @param('general.cache_dir')
 def iterate_datasets(data_names, cache_dir):
     
@@ -40,9 +53,7 @@ def iterate_datasets(data_names, cache_dir):
         elif data_name in ['computers', 'photo']:
             data = Amazon(root=cache_dir, name=data_name.capitalize())._data
         elif data_name in ['chameleon', 'squirrel']:
-            preProcDs = WikipediaNetwork(root=cache_dir, name=data_name.capitalize(), geom_gcn_preprocess=False)
-            data = WikipediaNetwork(root=cache_dir, name=data_name.capitalize(), geom_gcn_preprocess=True)._data
-            data.edge_index = preProcDs[0].edge_index
+            data = _load_wikipedia_network(cache_dir, data_name)
         else:
             raise ValueError(f'Unknown dataset: {data_name}')
         
@@ -64,9 +75,7 @@ def iterate_dataset_feature_tokens(data_names, cache_dir):
         elif data_name in ['computers', 'photo']:
             data = Amazon(root=cache_dir, name=data_name.capitalize())._data
         elif data_name in ['chameleon', 'squirrel']:
-            preProcDs = WikipediaNetwork(root=cache_dir, name=data_name.capitalize(), geom_gcn_preprocess=False)
-            data = WikipediaNetwork(root=cache_dir, name=data_name.capitalize(), geom_gcn_preprocess=True)._data
-            data.edge_index = preProcDs[0].edge_index
+            data = _load_wikipedia_network(cache_dir, data_name)
         else:
             raise ValueError(f'Unknown dataset: {data_name}')
         
