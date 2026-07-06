@@ -30,7 +30,7 @@ data:
 
 adapt:
   method: prog
-  pretrained_file: storage/gcope/cora_gcope/wisconsin,texas,cornell,chameleon,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
+  pretrained_file: storage/gcope/cora_gcope/wisconsin,texas,cornell,squirrel,citeseer,pubmed,computers,photo_pretrained_model.pt
   epoch: 100
   batch_size: 100
   repeat_times: 5
