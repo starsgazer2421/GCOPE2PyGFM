@@ -1,22 +1,86 @@
 from importlib import import_module
 from fastargs import get_current_config, Param, Section
 from fastargs.decorators import param
-from fastargs.validation import OneOf, ListOfFloats, Folder, SubsetOf, BoolAsInt
-try:
-    from fastargs.validation import File
-except ImportError:
-    from fastargs.validation import Checker
-
-    class File(Checker):
-        """Compatibility checker for fastargs versions without File()."""
-
-        def check(self, value):
-            return str(value)
-
-        def help(self):
-            return "a file path"
+from fastargs.validation import Checker, OneOf
 import argparse
 import os
+
+
+class File(Checker):
+    """Compatibility checker for fastargs versions without File()."""
+
+    def check(self, value):
+        return str(value)
+
+    def help(self):
+        return "a file path"
+
+
+class Folder(Checker):
+    """Compatibility checker for fastargs versions without Folder()."""
+
+    def __init__(self, create=False):
+        self.create = create
+
+    def check(self, value):
+        path = str(value)
+        if self.create:
+            os.makedirs(path, exist_ok=True)
+        return path
+
+    def help(self):
+        return "a folder path"
+
+
+class ListOfFloats(Checker):
+    """Compatibility checker accepting YAML lists or comma-separated floats."""
+
+    def check(self, value):
+        if isinstance(value, (list, tuple)):
+            return [float(item) for item in value]
+        return [float(item.strip()) for item in str(value).split(",") if item.strip()]
+
+    def help(self):
+        return "a list of floats"
+
+
+class SubsetOf(Checker):
+    """Compatibility checker accepting a subset of known string values."""
+
+    def __init__(self, possible_values):
+        self.possible_values = set(possible_values)
+
+    def check(self, value):
+        if isinstance(value, str):
+            values = [item.strip() for item in value.split(",") if item.strip()]
+        else:
+            values = list(value)
+        invalid = [item for item in values if item not in self.possible_values]
+        if invalid:
+            raise ValueError(f"Invalid values: {invalid}")
+        return values
+
+    def help(self):
+        return f"a subset of [{', '.join(sorted(self.possible_values))}]"
+
+
+class BoolAsInt(Checker):
+    """Compatibility checker for 0/1 and true/false options."""
+
+    def check(self, value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, int):
+            return bool(value)
+        normalized = str(value).strip().lower()
+        if normalized in {"1", "true", "yes", "y"}:
+            return True
+        if normalized in {"0", "false", "no", "n"}:
+            return False
+        raise ValueError(f"Invalid boolean value: {value}")
+
+    def help(self):
+        return "0/1 or true/false"
 
 Section('general', 'General Configs').params(
     func = Param(OneOf(['pretrain', 'adapt', 'ete']), required=True),
